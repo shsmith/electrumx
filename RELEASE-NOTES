@@ -1,3 +1,14 @@
+version 0.10.0
+--------------
+
+- implement UTXO cache windowing - issue #71.  This should be a
+  performance improvement both during initial sync, and also for
+  processing new blocks when serving.
+
+Please backup your DB or wait for stability to be confirmed before you
+run this version.  It changes the DB flush logic and if there is an
+error in my logic unrecoverable DB corruption is very likely.
+
 version 0.9.9
 -------------
 
