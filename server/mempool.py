@@ -198,7 +198,7 @@ class MemPool(util.LoggedClass):
         db_utxo_lookup = self.db.db_utxo_lookup
         txs = self.txs
 
-        # Deserialize each tx and put it in our priority queue
+        # Deserialize each tx and add it to the pending list
         for tx_hash, raw_tx in raw_tx_map.items():
             if not tx_hash in txs:
                 continue
