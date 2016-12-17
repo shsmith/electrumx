@@ -104,6 +104,11 @@ class ServerManager(util.LoggedClass):
         '''
         return self.mempool.value(hash168)
 
+    def sent_tx(self, tx_hash):
+        '''Call when a TX is sent.  Tells mempool to prioritize it.'''
+        self.txs_sent += 1
+        self.mempool.prioritize(tx_hash)
+
     def setup_bands(self):
         bands = []
         limit = self.env.bandwidth_limit
@@ -156,7 +161,8 @@ class ServerManager(util.LoggedClass):
         excess = priority - self.BANDS
         if excess > 0:
             secs = excess
-            session.log_info('delaying response {:d}s'.format(secs))
+            session.log_info('delaying response to low-priority session {:d}s'
+                             .format(secs))
         if secs:
             self.delayed_sessions.append((time.time() + secs, item))
         else:
@@ -329,8 +335,9 @@ class ServerManager(util.LoggedClass):
         group = self.groups[int(session.start - self.start) // 900]
         group.add(session)
         self.sessions[session] = group
-        session.log_info('connection from {}, {:,d} total'
-                         .format(session.peername(), len(self.sessions)))
+        session.log_info('{} from {}, {:,d} total'
+                         .format(session.kind, session.peername(),
+                                 len(self.sessions)))
         if (len(self.sessions) >= self.max_sessions
                and self.state == self.LISTENING):
             self.state = self.PAUSED
@@ -898,8 +905,8 @@ class ElectrumX(Session):
         try:
             tx_hash = await self.daemon.sendrawtransaction(params)
             self.txs_sent += 1
-            self.manager.txs_sent += 1
             self.log_info('sent tx: {}'.format(tx_hash))
+            self.manager.sent_tx(tx_hash)
             return tx_hash
         except DaemonError as e:
             error = e.args[0]
